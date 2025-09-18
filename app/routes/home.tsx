@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Reorder, useMotionValue } from "motion/react";
 import type { Route } from "./+types/home";
 import { Button } from "~/components/ui/button";
@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { toast } from "sonner";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -210,13 +211,29 @@ export default function Home() {
               <DialogHeader>
                 <DialogTitle>Cheat file</DialogTitle>
               </DialogHeader>
-              <pre className="overflow-auto max-h-[500px] bg-gray-100 p-4 rounded-xl">
+              <pre className="overflow-auto max-h-[500px] bg-gray-100 p-4 rounded-xl whitespace-pre-wrap">
                 {serializeChtFile(chtFile)}
               </pre>
               <DialogFooter>
                 <Button
+                  variant="outline"
+                  onClick={() => {
+                    const blob = new Blob([serializeChtFile(chtFile)], {
+                      type: "text/plain",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "cheat.cht";
+                    a.click();
+                  }}
+                >
+                  Download
+                </Button>
+                <Button
                   onClick={() => {
                     navigator.clipboard.writeText(serializeChtFile(chtFile));
+                    toast.success("Copied to clipboard");
                   }}
                 >
                   Copy to clipboard
