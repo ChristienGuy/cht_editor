@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Reorder } from "motion/react";
 import type { Route } from "./+types/home";
+import { Button } from "~/components/ui/button";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -18,6 +20,19 @@ type ChtFile = {
   cheatsCount: number;
   cheats: Cheat[];
 };
+
+function serializeChtFile(chtFile: ChtFile): string {
+  return `cheats = ${chtFile.cheatsCount}
+${chtFile.cheats
+  .map(
+    (cheat, index) => `
+cheat${index}_desc = "${cheat.description}"
+cheat${index}_code = "${cheat.code}"
+cheat${index}_enable = ${cheat.enabled}`
+  )
+  .join("\n")}
+`;
+}
 
 function parseChtFile(file: File): Promise<ChtFile> {
   // The input file will have a first line that has the count of cheats
@@ -77,7 +92,6 @@ function parseChtFile(file: File): Promise<ChtFile> {
 }
 
 export default function Home() {
-  const [file, setFile] = useState<File | null>(null);
   const [chtFile, setChtFile] = useState<ChtFile | null>(null);
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -88,6 +102,17 @@ export default function Home() {
     }
   };
 
+  const handleReorder = (newOrder: Cheat[]) => {
+    if (!chtFile) return;
+
+    console.log("newOrder", newOrder);
+
+    setChtFile({
+      ...chtFile,
+      cheats: newOrder,
+    });
+  };
+
   return (
     <div className="p-4 flex flex-col gap-4">
       <h1>Home</h1>
@@ -96,15 +121,33 @@ export default function Home() {
         <input type="file" id="file" onChange={handleFileChange} />
       </div>
 
-      <ul className="flex flex-col gap-4">
-        {chtFile?.cheats.map((cheat) => (
-          <li key={cheat.description}>
-            <pre>{cheat.description}</pre>
-            <pre>{cheat.code}</pre>
-            <pre>{cheat.enabled ? "true" : "false"}</pre>
-          </li>
-        ))}
-      </ul>
+      {chtFile && (
+        <Reorder.Group
+          className="flex flex-col gap-4"
+          values={chtFile.cheats}
+          onReorder={handleReorder}
+        >
+          {chtFile.cheats.map((cheat) => (
+            <Reorder.Item key={cheat.description} value={cheat}>
+              <pre>{cheat.description}</pre>
+              <pre>{cheat.code}</pre>
+              <pre>{cheat.enabled ? "true" : "false"}</pre>
+            </Reorder.Item>
+          ))}
+        </Reorder.Group>
+      )}
+
+      {chtFile && (
+        <Button
+          variant="default"
+          onClick={() => {
+            const serializedChtFile = serializeChtFile(chtFile);
+            console.log(serializedChtFile);
+          }}
+        >
+          Save
+        </Button>
+      )}
     </div>
   );
 }
