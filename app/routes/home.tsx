@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { toast } from "sonner";
+import { Textarea } from "~/components/ui/textarea";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -157,11 +158,13 @@ function parseChtFile(file: File): Promise<ChtFile> {
 }
 
 function CheatItem({
+  onClick,
   cheat,
   onCheckedChange,
 }: {
   cheat: Cheat;
   onCheckedChange: (enabled: boolean) => void;
+  onClick: () => void;
 }) {
   const y = useMotionValue(0);
 
@@ -171,7 +174,7 @@ function CheatItem({
       drag
       value={cheat}
       className={cn(
-        "flex flex-col bg-white/70 p-3 rounded-xl cursor-grab backdrop-blur-xl"
+        "flex flex-col gap-2 bg-white/50 p-3 rounded-xl cursor-grab backdrop-blur-lg"
       )}
       style={{ y }}
       whileDrag={{
@@ -181,15 +184,18 @@ function CheatItem({
         cursor: "grabbing",
       }}
     >
-      <pre>{cheat.description}</pre>
-      <pre>{cheat.code}</pre>
-      <Label>
-        <Checkbox checked={cheat.enabled} onCheckedChange={onCheckedChange} />
-      </Label>
+      <button onClick={onClick}>
+        <pre>{cheat.description}</pre>
+        <pre>{cheat.code}</pre>
+        <Label>
+          <Checkbox checked={cheat.enabled} onCheckedChange={onCheckedChange} />
+        </Label>
+      </button>
     </Reorder.Item>
   );
 }
 export default function Home() {
+  const [selectedCheat, setSelectedCheat] = useState<Cheat | null>(null);
   const [chtFile, setChtFile] = useState<ChtFile | null>(null);
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -269,15 +275,18 @@ export default function Home() {
 
       {chtFile && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr_1fr] gap-4">
+            <div className="">
               <Reorder.Group
-                className="flex flex-col gap-4 border-r border-gray-100 pr-4"
+                className="flex flex-col gap-4"
                 values={chtFile.cheats}
                 onReorder={handleReorder}
               >
                 {chtFile.cheats.map((cheat, index) => (
                   <CheatItem
+                    onClick={() => {
+                      setSelectedCheat(cheat);
+                    }}
                     cheat={cheat}
                     key={cheat.id}
                     onCheckedChange={(enabled) =>
@@ -288,8 +297,60 @@ export default function Home() {
               </Reorder.Group>
               <Button onClick={handleNewCheat}>New cheat</Button>
             </div>
-            <code>
-              <pre></pre>
+            <form className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  value={
+                    chtFile.cheats.find(
+                      (cheat) => cheat.id === selectedCheat?.id
+                    )?.description
+                  }
+                  onChange={(e) => {
+                    setChtFile((chtFile) => {
+                      if (!chtFile) return null;
+
+                      return {
+                        ...chtFile,
+                        cheats: chtFile.cheats.map((cheat) =>
+                          cheat.id === selectedCheat?.id
+                            ? { ...cheat, description: e.target.value }
+                            : cheat
+                        ),
+                      };
+                    });
+                  }}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="code">Code</Label>
+                <Textarea
+                  id="code"
+                  value={
+                    chtFile.cheats.find(
+                      (cheat) => cheat.id === selectedCheat?.id
+                    )?.code
+                  }
+                  onChange={(e) => {
+                    setChtFile((chtFile) => {
+                      if (!chtFile) return null;
+
+                      return {
+                        ...chtFile,
+                        cheats: chtFile.cheats.map((cheat) =>
+                          cheat.id === selectedCheat?.id
+                            ? { ...cheat, code: e.target.value }
+                            : cheat
+                        ),
+                      };
+                    });
+                  }}
+                />
+              </div>
+            </form>
+            <code className="bg-gray-100 p-4 rounded-xl">
+              <pre className="text-sm text-gray-700 mb-2">{chtFile.name}</pre>
               <pre>{serializeChtFile(chtFile)}</pre>
             </code>
           </div>
