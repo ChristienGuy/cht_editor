@@ -37,17 +37,60 @@ type ChtFile = {
   cheats: Cheat[];
 };
 
+function serializeCode(code: string): string {
+  // All new lines and spaces should be replaced with +
+  // There should be no trailing +
+  return code.replace(/ |\n/g, "+").replace(/\+$/, "");
+}
+
 function serializeChtFile(chtFile: ChtFile): string {
   return `cheats = ${chtFile.cheatsCount}
 ${chtFile.cheats
   .map(
     (cheat, index) => `
 cheat${index}_desc = "${cheat.description}"
-cheat${index}_code = "${cheat.code}"
+cheat${index}_code = "${serializeCode(cheat.code)}"
 cheat${index}_enable = ${cheat.enabled}`
   )
-  .join("\n")}
-`;
+  .join("\n")}`;
+}
+
+// There are two types of code:
+// 1. Code Breaker codes are in the format:
+// XXXXXXXX+XXXX+YYYYYYYY+YYYY etc.
+// We need to parse the code and return a string with the code in the format:
+// XXXXXXXX XXXX
+// YYYYYYYY YYYY
+// 2. Action Replay/Game Shark codes are in the format:
+// XXXXXXXX+YYYYYYYY etc.
+// We need to parse the code and return a string with the code in the format:
+// XXXXXXXX
+// YYYYYYYY
+function parseCode(code: string) {
+  const parts = code.split("+");
+  let result = "";
+
+  if (parts.length === 1) {
+    return code;
+  }
+
+  const isCodeBreaker = parts[1].length === 4;
+  if (isCodeBreaker) {
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 0) {
+        result += parts[i] + " ";
+      } else {
+        result += parts[i] + "\n";
+      }
+    }
+  } else {
+    for (let i = 0; i < parts.length; i++) {
+      result += parts[i] + "\n";
+    }
+  }
+
+  // Remove trailing new lines
+  return result.replace(/\n$/, "");
 }
 
 function parseChtFile(file: File): Promise<ChtFile> {
@@ -55,6 +98,10 @@ function parseChtFile(file: File): Promise<ChtFile> {
   // e.g cheats = 74
   // Then the file will have 74 lines of cheats
   // Each cheat will be grouped by empty lines before and after it
+  // The file can have a mix of code breaker and action replay/game shark codes
+  // The file can have a mix of single line and multi line codes
+  // The file can have a mix of enabled and disabled codes
+  // The file will not have a trailing new line
   // e.g
   // cheat0_desc = "..."
   // cheat0_code = "..."
@@ -68,8 +115,6 @@ function parseChtFile(file: File): Promise<ChtFile> {
   // cheat73_code = "..."
   // cheat73_enable = true
   const reader = new FileReader();
-
-  console.log("file", file);
 
   const chtFile: ChtFile = {
     name: file.name,
@@ -93,7 +138,7 @@ function parseChtFile(file: File): Promise<ChtFile> {
           cheats.push({
             id: crypto.randomUUID(),
             description: lines[i + 1].split(" = ")[1].replace(/^"|"$/g, ""),
-            code: lines[i + 2].split(" = ")[1].replace(/^"|"$/g, ""),
+            code: parseCode(lines[i + 2].split(" = ")[1].replace(/^"|"$/g, "")),
             enabled: lines[i + 3].split(" = ")[1] === "true",
           });
 
@@ -175,10 +220,6 @@ export default function Home() {
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
-    console.log("keydown", e.key);
-  };
-
   const handleNewCheat = () => {
     setChtFile((prevChtFile) => {
       if (!prevChtFile) return null;
@@ -221,7 +262,6 @@ export default function Home() {
 
   return (
     <div className="p-4 flex flex-col gap-8">
-      <h1>Home</h1>
       <div className="flex flex-col gap-2">
         <Label htmlFor="file">Upload File</Label>
         <Input type="file" id="file" onChange={handleFileChange} />
@@ -235,7 +275,6 @@ export default function Home() {
                 className="flex flex-col gap-4 border-r border-gray-100 pr-4"
                 values={chtFile.cheats}
                 onReorder={handleReorder}
-                onKeyDown={handleKeyDown}
               >
                 {chtFile.cheats.map((cheat, index) => (
                   <CheatItem
@@ -250,6 +289,7 @@ export default function Home() {
               <Button onClick={handleNewCheat}>New cheat</Button>
             </div>
             <code>
+              <pre></pre>
               <pre>{serializeChtFile(chtFile)}</pre>
             </code>
           </div>
