@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/dialog";
 import { toast } from "sonner";
 import { Textarea } from "~/components/ui/textarea";
+import { ScrollArea } from "~/components/ui/scroll-area";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -173,9 +174,7 @@ function CheatItem({
       tabIndex={0}
       drag
       value={cheat}
-      className={cn(
-        "flex flex-col gap-2 bg-white/50 p-3 rounded-xl cursor-grab backdrop-blur-lg"
-      )}
+      className={cn("bg-white/50 p-3 rounded-xl cursor-grab backdrop-blur-lg")}
       style={{ y }}
       whileDrag={{
         scale: 1.01,
@@ -184,12 +183,14 @@ function CheatItem({
         cursor: "grabbing",
       }}
     >
-      <button onClick={onClick}>
-        <pre>{cheat.description}</pre>
-        <pre>{cheat.code}</pre>
-        <Label>
-          <Checkbox checked={cheat.enabled} onCheckedChange={onCheckedChange} />
-        </Label>
+      <button
+        className="flex items-start justify-between gap-2 text-left"
+        onClick={onClick}
+      >
+        <div className="flex flex-col gap-2">
+          <span>{cheat.description}</span>
+          <span>{cheat.code}</span>
+        </div>
       </button>
     </Reorder.Item>
   );
@@ -227,23 +228,24 @@ export default function Home() {
   };
 
   const handleNewCheat = () => {
+    const newCheat = {
+      id: crypto.randomUUID(),
+      description: "New cheat",
+      code: "test",
+      enabled: false,
+    };
+
     setChtFile((prevChtFile) => {
       if (!prevChtFile) return null;
 
       return {
         ...prevChtFile,
         cheatsCount: prevChtFile.cheatsCount + 1,
-        cheats: [
-          ...prevChtFile.cheats,
-          {
-            id: crypto.randomUUID(),
-            description: "New cheat",
-            code: "test",
-            enabled: false,
-          },
-        ],
+        cheats: [...prevChtFile.cheats, newCheat],
       };
     });
+
+    setSelectedCheat(newCheat);
   };
 
   const handleDownload = () => {
@@ -267,7 +269,7 @@ export default function Home() {
   };
 
   return (
-    <div className="p-4 flex flex-col gap-8">
+    <div className="p-4 flex flex-col gap-8 h-screen">
       <div className="flex flex-col gap-2">
         <Label htmlFor="file">Upload File</Label>
         <Input type="file" id="file" onChange={handleFileChange} />
@@ -275,27 +277,29 @@ export default function Home() {
 
       {chtFile && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr_1fr] gap-4">
-            <div className="">
-              <Reorder.Group
-                className="flex flex-col gap-4"
-                values={chtFile.cheats}
-                onReorder={handleReorder}
-              >
-                {chtFile.cheats.map((cheat, index) => (
-                  <CheatItem
-                    onClick={() => {
-                      setSelectedCheat(cheat);
-                    }}
-                    cheat={cheat}
-                    key={cheat.id}
-                    onCheckedChange={(enabled) =>
-                      handleCheckedChange(cheat, enabled)
-                    }
-                  />
-                ))}
-              </Reorder.Group>
+          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr_1fr] gap-4 overflow-auto">
+            <div className="flex flex-col overflow-auto">
               <Button onClick={handleNewCheat}>New cheat</Button>
+              <ScrollArea className="overflow-auto" type="auto">
+                <Reorder.Group
+                  className="flex flex-col gap-4"
+                  values={chtFile.cheats}
+                  onReorder={handleReorder}
+                >
+                  {chtFile.cheats.map((cheat, index) => (
+                    <CheatItem
+                      onClick={() => {
+                        setSelectedCheat(cheat);
+                      }}
+                      cheat={cheat}
+                      key={cheat.id}
+                      onCheckedChange={(enabled) =>
+                        handleCheckedChange(cheat, enabled)
+                      }
+                    />
+                  ))}
+                </Reorder.Group>
+              </ScrollArea>
             </div>
             <form className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
@@ -349,9 +353,11 @@ export default function Home() {
                 />
               </div>
             </form>
-            <code className="bg-gray-100 p-4 rounded-xl">
-              <pre className="text-sm text-gray-700 mb-2">{chtFile.name}</pre>
-              <pre>{serializeChtFile(chtFile)}</pre>
+            <code className="bg-gray-100 py-4 rounded-xl flex flex-col gap-2 overflow-auto">
+              <pre className="text-sm text-gray-700 px-4">{chtFile.name}</pre>
+              <ScrollArea className="h-full w-full overflow-auto">
+                <pre>{serializeChtFile(chtFile)}</pre>
+              </ScrollArea>
             </code>
           </div>
           <div className="flex col-span-2 justify-end gap-2">
