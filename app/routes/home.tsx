@@ -25,12 +25,14 @@ export function meta({}: Route.MetaArgs) {
 }
 
 type Cheat = {
+  id: string;
   description: string;
   code: string;
   enabled: boolean;
 };
 
 type ChtFile = {
+  name: string;
   cheatsCount: number;
   cheats: Cheat[];
 };
@@ -67,7 +69,10 @@ function parseChtFile(file: File): Promise<ChtFile> {
   // cheat73_enable = true
   const reader = new FileReader();
 
+  console.log("file", file);
+
   const chtFile: ChtFile = {
+    name: file.name,
     cheatsCount: 0,
     cheats: [],
   };
@@ -86,6 +91,7 @@ function parseChtFile(file: File): Promise<ChtFile> {
 
         if (line === "") {
           cheats.push({
+            id: crypto.randomUUID(),
             description: lines[i + 1].split(" = ")[1].replace(/^"|"$/g, ""),
             code: lines[i + 2].split(" = ")[1].replace(/^"|"$/g, ""),
             enabled: lines[i + 3].split(" = ")[1] === "true",
@@ -173,6 +179,26 @@ export default function Home() {
     console.log("keydown", e.key);
   };
 
+  const handleNewCheat = () => {
+    setChtFile((prevChtFile) => {
+      if (!prevChtFile) return null;
+
+      return {
+        ...prevChtFile,
+        cheatsCount: prevChtFile.cheatsCount + 1,
+        cheats: [
+          ...prevChtFile.cheats,
+          {
+            id: crypto.randomUUID(),
+            description: "New cheat",
+            code: "test",
+            enabled: false,
+          },
+        ],
+      };
+    });
+  };
+
   return (
     <div className="p-4 flex flex-col gap-8">
       <h1>Home</h1>
@@ -184,63 +210,29 @@ export default function Home() {
       {chtFile && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4">
-            <Reorder.Group
-              className="flex flex-col gap-4 border-r border-gray-100 pr-4"
-              values={chtFile.cheats}
-              onReorder={handleReorder}
-              onKeyDown={handleKeyDown}
-            >
-              {chtFile.cheats.map((cheat) => (
-                <CheatItem
-                  cheat={cheat}
-                  key={cheat.description}
-                  onCheckedChange={(enabled) =>
-                    handleCheckedChange(cheat, enabled)
-                  }
-                />
-              ))}
-            </Reorder.Group>
-            <Outlet />
+            <div>
+              <Reorder.Group
+                className="flex flex-col gap-4 border-r border-gray-100 pr-4"
+                values={chtFile.cheats}
+                onReorder={handleReorder}
+                onKeyDown={handleKeyDown}
+              >
+                {chtFile.cheats.map((cheat, index) => (
+                  <CheatItem
+                    cheat={cheat}
+                    key={cheat.id}
+                    onCheckedChange={(enabled) =>
+                      handleCheckedChange(cheat, enabled)
+                    }
+                  />
+                ))}
+              </Reorder.Group>
+              <Button onClick={handleNewCheat}>New cheat</Button>
+            </div>
+            <code>
+              <pre>{serializeChtFile(chtFile)}</pre>
+            </code>
           </div>
-
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="default">Save</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Cheat file</DialogTitle>
-              </DialogHeader>
-              <pre className="overflow-auto max-h-[500px] bg-gray-100 p-4 rounded-xl whitespace-pre-wrap">
-                {serializeChtFile(chtFile)}
-              </pre>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const blob = new Blob([serializeChtFile(chtFile)], {
-                      type: "text/plain",
-                    });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "cheat.cht";
-                    a.click();
-                  }}
-                >
-                  Download
-                </Button>
-                <Button
-                  onClick={() => {
-                    navigator.clipboard.writeText(serializeChtFile(chtFile));
-                    toast.success("Copied to clipboard");
-                  }}
-                >
-                  Copy to clipboard
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </>
       )}
     </div>
