@@ -7,6 +7,14 @@ import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
 import { Outlet } from "react-router";
 import { Checkbox } from "~/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -107,6 +115,7 @@ function CheatItem({
 
   return (
     <Reorder.Item
+      tabIndex={0}
       drag
       value={cheat}
       className={cn(
@@ -142,8 +151,6 @@ export default function Home() {
   const handleReorder = (newOrder: Cheat[]) => {
     if (!chtFile) return;
 
-    console.log("newOrder", newOrder);
-
     setChtFile({
       ...chtFile,
       cheats: newOrder,
@@ -161,6 +168,10 @@ export default function Home() {
     });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
+    console.log("keydown", e.key);
+  };
+
   return (
     <div className="p-4 flex flex-col gap-8">
       <h1>Home</h1>
@@ -176,6 +187,7 @@ export default function Home() {
               className="flex flex-col gap-4 border-r border-gray-100 pr-4"
               values={chtFile.cheats}
               onReorder={handleReorder}
+              onKeyDown={handleKeyDown}
             >
               {chtFile.cheats.map((cheat) => (
                 <CheatItem
@@ -190,15 +202,28 @@ export default function Home() {
             <Outlet />
           </div>
 
-          <Button
-            variant="default"
-            onClick={() => {
-              const serializedChtFile = serializeChtFile(chtFile);
-              console.log(serializedChtFile);
-            }}
-          >
-            Save
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="default">Save</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Cheat file</DialogTitle>
+              </DialogHeader>
+              <pre className="overflow-auto max-h-[500px] bg-gray-100 p-4 rounded-xl">
+                {serializeChtFile(chtFile)}
+              </pre>
+              <DialogFooter>
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(serializeChtFile(chtFile));
+                  }}
+                >
+                  Copy to clipboard
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>
