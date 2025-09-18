@@ -1,7 +1,12 @@
-import { useState } from "react";
-import { Reorder } from "motion/react";
+import { useEffect, useState } from "react";
+import { Reorder, useMotionValue } from "motion/react";
 import type { Route } from "./+types/home";
 import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
+import { Input } from "~/components/ui/input";
+import { cn } from "~/lib/utils";
+import { Outlet } from "react-router";
+import { Checkbox } from "~/components/ui/checkbox";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -91,6 +96,38 @@ function parseChtFile(file: File): Promise<ChtFile> {
   });
 }
 
+function CheatItem({
+  cheat,
+  onCheckedChange,
+}: {
+  cheat: Cheat;
+  onCheckedChange: (enabled: boolean) => void;
+}) {
+  const y = useMotionValue(0);
+
+  return (
+    <Reorder.Item
+      drag
+      value={cheat}
+      className={cn(
+        "flex flex-col bg-white/70 p-3 rounded-xl cursor-grab backdrop-blur-xl"
+      )}
+      style={{ y }}
+      whileDrag={{
+        scale: 1.01,
+        boxShadow:
+          "0 4px 6px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 2px 4px -2px var(--tw-shadow-color, rgb(0 0 0 / 0.1))",
+        cursor: "grabbing",
+      }}
+    >
+      <pre>{cheat.description}</pre>
+      <pre>{cheat.code}</pre>
+      <Label>
+        <Checkbox checked={cheat.enabled} onCheckedChange={onCheckedChange} />
+      </Label>
+    </Reorder.Item>
+  );
+}
 export default function Home() {
   const [chtFile, setChtFile] = useState<ChtFile | null>(null);
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,40 +150,56 @@ export default function Home() {
     });
   };
 
+  const handleCheckedChange = (cheat: Cheat, enabled: boolean) => {
+    if (!chtFile) return;
+
+    setChtFile({
+      ...chtFile,
+      cheats: chtFile.cheats.map((c) =>
+        c.description === cheat.description ? { ...c, enabled } : c
+      ),
+    });
+  };
+
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="p-4 flex flex-col gap-8">
       <h1>Home</h1>
-      <div>
-        <label htmlFor="file">Upload File</label>
-        <input type="file" id="file" onChange={handleFileChange} />
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="file">Upload File</Label>
+        <Input type="file" id="file" onChange={handleFileChange} />
       </div>
 
       {chtFile && (
-        <Reorder.Group
-          className="flex flex-col gap-4"
-          values={chtFile.cheats}
-          onReorder={handleReorder}
-        >
-          {chtFile.cheats.map((cheat) => (
-            <Reorder.Item key={cheat.description} value={cheat}>
-              <pre>{cheat.description}</pre>
-              <pre>{cheat.code}</pre>
-              <pre>{cheat.enabled ? "true" : "false"}</pre>
-            </Reorder.Item>
-          ))}
-        </Reorder.Group>
-      )}
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4">
+            <Reorder.Group
+              className="flex flex-col gap-4 border-r border-gray-100 pr-4"
+              values={chtFile.cheats}
+              onReorder={handleReorder}
+            >
+              {chtFile.cheats.map((cheat) => (
+                <CheatItem
+                  cheat={cheat}
+                  key={cheat.description}
+                  onCheckedChange={(enabled) =>
+                    handleCheckedChange(cheat, enabled)
+                  }
+                />
+              ))}
+            </Reorder.Group>
+            <Outlet />
+          </div>
 
-      {chtFile && (
-        <Button
-          variant="default"
-          onClick={() => {
-            const serializedChtFile = serializeChtFile(chtFile);
-            console.log(serializedChtFile);
-          }}
-        >
-          Save
-        </Button>
+          <Button
+            variant="default"
+            onClick={() => {
+              const serializedChtFile = serializeChtFile(chtFile);
+              console.log(serializedChtFile);
+            }}
+          >
+            Save
+          </Button>
+        </>
       )}
     </div>
   );
