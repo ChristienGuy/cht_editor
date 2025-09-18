@@ -276,7 +276,7 @@ export default function Home() {
 
       {chtFile && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr_1fr] gap-4 overflow-auto">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] gap-4 overflow-auto">
             <div className="flex flex-col gap-4 overflow-auto">
               <Button onClick={handleNewCheat}>New cheat</Button>
               <ScrollArea className="overflow-auto px-2" type="auto">
@@ -300,64 +300,66 @@ export default function Home() {
                 </Reorder.Group>
               </ScrollArea>
             </div>
-            <form className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={
-                    chtFile.cheats.find(
-                      (cheat) => cheat.id === selectedCheat?.id
-                    )?.description
-                  }
-                  onChange={(e) => {
-                    setChtFile((chtFile) => {
-                      if (!chtFile) return null;
+            <div className="flex flex-col gap-4 overflow-auto">
+              <form className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    value={
+                      chtFile.cheats.find(
+                        (cheat) => cheat.id === selectedCheat?.id
+                      )?.description
+                    }
+                    onChange={(e) => {
+                      setChtFile((chtFile) => {
+                        if (!chtFile) return null;
 
-                      return {
-                        ...chtFile,
-                        cheats: chtFile.cheats.map((cheat) =>
-                          cheat.id === selectedCheat?.id
-                            ? { ...cheat, description: e.target.value }
-                            : cheat
-                        ),
-                      };
-                    });
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="code">Code</Label>
-                <Textarea
-                  id="code"
-                  value={
-                    chtFile.cheats.find(
-                      (cheat) => cheat.id === selectedCheat?.id
-                    )?.code
-                  }
-                  onChange={(e) => {
-                    setChtFile((chtFile) => {
-                      if (!chtFile) return null;
+                        return {
+                          ...chtFile,
+                          cheats: chtFile.cheats.map((cheat) =>
+                            cheat.id === selectedCheat?.id
+                              ? { ...cheat, description: e.target.value }
+                              : cheat
+                          ),
+                        };
+                      });
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="code">Code</Label>
+                  <Textarea
+                    id="code"
+                    value={
+                      chtFile.cheats.find(
+                        (cheat) => cheat.id === selectedCheat?.id
+                      )?.code
+                    }
+                    onChange={(e) => {
+                      setChtFile((chtFile) => {
+                        if (!chtFile) return null;
 
-                      return {
-                        ...chtFile,
-                        cheats: chtFile.cheats.map((cheat) =>
-                          cheat.id === selectedCheat?.id
-                            ? { ...cheat, code: e.target.value }
-                            : cheat
-                        ),
-                      };
-                    });
-                  }}
-                />
-              </div>
-            </form>
-            <code className="bg-gray-100 py-4 rounded-xl flex flex-col gap-2 overflow-auto">
-              <pre className="text-sm text-gray-700 px-4">{chtFile.name}</pre>
-              <ScrollArea className="h-full w-full overflow-auto px-4">
-                <pre>{serializeChtFile(chtFile)}</pre>
-              </ScrollArea>
-            </code>
+                        return {
+                          ...chtFile,
+                          cheats: chtFile.cheats.map((cheat) =>
+                            cheat.id === selectedCheat?.id
+                              ? { ...cheat, code: e.target.value }
+                              : cheat
+                          ),
+                        };
+                      });
+                    }}
+                  />
+                </div>
+              </form>
+              <code className="bg-gray-100 py-4 rounded-xl flex flex-col gap-2 overflow-auto">
+                <pre className="text-sm text-gray-700 px-4">{chtFile.name}</pre>
+                <ScrollArea className="h-full w-full overflow-auto px-4">
+                  <pre>{serializeChtFile(chtFile)}</pre>
+                </ScrollArea>
+              </code>
+            </div>
           </div>
           <div className="flex col-span-2 justify-end gap-2">
             <Button onClick={handleDownload}>Download</Button>
