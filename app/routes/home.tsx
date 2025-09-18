@@ -199,6 +199,26 @@ export default function Home() {
     });
   };
 
+  const handleDownload = () => {
+    if (!chtFile) return;
+
+    const blob = new Blob([serializeChtFile(chtFile)], {
+      type: "text/plain",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = chtFile.name;
+    a.click();
+  };
+
+  const handleCopyToClipboard = () => {
+    if (!chtFile) return;
+
+    navigator.clipboard.writeText(serializeChtFile(chtFile));
+    toast.success("Copied to clipboard");
+  };
+
   return (
     <div className="p-4 flex flex-col gap-8">
       <h1>Home</h1>
@@ -232,6 +252,10 @@ export default function Home() {
             <code>
               <pre>{serializeChtFile(chtFile)}</pre>
             </code>
+          </div>
+          <div className="flex col-span-2 justify-end gap-2">
+            <Button onClick={handleDownload}>Download</Button>
+            <Button onClick={handleCopyToClipboard}>Copy to clipboard</Button>
           </div>
         </>
       )}
