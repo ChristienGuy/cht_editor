@@ -174,7 +174,7 @@ function CheatItem({
       tabIndex={0}
       drag
       value={cheat}
-      className={cn("bg-white/50 p-3 rounded-xl cursor-grab backdrop-blur-lg")}
+      className={cn("bg-white/50 rounded-xl cursor-grab backdrop-blur-lg")}
       style={{ y }}
       whileDrag={{
         scale: 1.01,
@@ -184,12 +184,11 @@ function CheatItem({
       }}
     >
       <button
-        className="flex items-start justify-between gap-2 text-left"
+        className="w-full h-full px-2 py-1 flex items-start justify-between gap-2 text-left"
         onClick={onClick}
       >
         <div className="flex flex-col gap-2">
           <span>{cheat.description}</span>
-          <span>{cheat.code}</span>
         </div>
       </button>
     </Reorder.Item>
@@ -278,9 +277,9 @@ export default function Home() {
       {chtFile && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-[300px_1fr_1fr] gap-4 overflow-auto">
-            <div className="flex flex-col overflow-auto">
+            <div className="flex flex-col gap-4 overflow-auto">
               <Button onClick={handleNewCheat}>New cheat</Button>
-              <ScrollArea className="overflow-auto" type="auto">
+              <ScrollArea className="overflow-auto px-2" type="auto">
                 <Reorder.Group
                   className="flex flex-col gap-4"
                   values={chtFile.cheats}
@@ -355,7 +354,7 @@ export default function Home() {
             </form>
             <code className="bg-gray-100 py-4 rounded-xl flex flex-col gap-2 overflow-auto">
               <pre className="text-sm text-gray-700 px-4">{chtFile.name}</pre>
-              <ScrollArea className="h-full w-full overflow-auto">
+              <ScrollArea className="h-full w-full overflow-auto px-4">
                 <pre>{serializeChtFile(chtFile)}</pre>
               </ScrollArea>
             </code>
